@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAP Mask-Fitting Study | Data Entry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{
+  --navy:#0d2137; --navy-mid:#163352; --teal:#0a8fa0; --teal-lt:#0eb8cf; --teal-pale:#e0f7fa;
+  --purple:#7c6fe0; --purple-pale:#f0eeff; --coral:#e05252; --amber:#e8952a; --amber-pale:#fdf1e0;
+  --bg:#f0f4f7; --surface:#ffffff; --border:#d4dce4; --text:#1a2f42; --muted:#6b8299; --label:#3a5570;
+  --font-head:'Spectral',Georgia,serif; --font-body:'Outfit',system-ui,sans-serif; --font-mono:'JetBrains Mono','Courier New',monospace;
+  --radius-sm:6px; --radius:10px; --radius-lg:16px;
+  --shadow-sm:0 1px 3px rgba(13,33,55,.08),0 1px 8px rgba(13,33,55,.04);
+  --shadow:0 2px 12px rgba(13,33,55,.10),0 1px 3px rgba(13,33,55,.06);
+  --shadow-lg:0 8px 32px rgba(13,33,55,.14);
+  --trans:200ms cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+
+/* Header */
+.app-header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 60%,#1a4a6b 100%);padding:32px 20px 26px;color:#fff}
+.app-header .inner{max-width:760px;margin:0 auto}
+.app-header .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-lt);margin-bottom:8px}
+.app-header h1{font-family:var(--font-head);font-size:23px;font-weight:600;line-height:1.35;max-width:560px}
+.app-header .sub{font-size:12.5px;color:#9db3c7;margin-top:8px}
+
+/* Home cards */
+.home-grid{display:grid;gap:16px;margin-top:28px}
+.mod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;box-shadow:var(--shadow-sm);cursor:pointer;transition:var(--trans);display:flex;gap:16px;align-items:flex-start}
+.mod-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);border-color:#b8cbd6}
+.mod-card .icon{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+.mod-card.enroll .icon{background:var(--teal-pale);color:var(--teal)}
+.mod-card.followup .icon{background:var(--purple-pale);color:var(--purple)}
+.mod-card.outcomes .icon{background:var(--amber-pale);color:var(--amber)}
+.mod-card h2{font-family:var(--font-head);font-size:17px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.mod-card p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* Screens */
+.screen{display:none;padding-top:24px}
+.screen.show{display:block}
+.screen-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.back-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-sm);padding:6px 12px;font-size:12.5px;font-family:var(--font-body);cursor:pointer;transition:var(--trans)}
+.back-btn:hover{background:var(--bg);color:var(--label)}
+.screen-title{font-family:var(--font-head);font-size:18px;font-weight:600;color:var(--navy)}
+
+/* Progress */
+.progress-track{display:flex;gap:5px;margin-bottom:22px}
+.progress-seg{flex:1;height:4px;border-radius:2px;background:var(--border);transition:var(--trans)}
+.progress-seg.done{background:var(--teal)}
+.progress-seg.current{background:var(--teal-lt)}
+.step-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+
+/* Card / step panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-sm)}
+.panel h3{font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.panel .panel-sub{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+
+/* Fields */
+.field{margin-bottom:18px}
+.field label{display:block;font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--label);font-weight:500;margin-bottom:7px}
+.field .req{color:var(--coral)}
+.field input[type=text],.field input[type=number],.field select{
+  width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  font-family:var(--font-body);font-size:14px;color:var(--text);background:#fff;transition:var(--trans)
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,143,160,.12)}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:5px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.field-row{grid-template-columns:1fr}}
+.unit-input{position:relative}
+.unit-input .unit-tag{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--muted);font-family:var(--font-mono);pointer-events:none}
+
+/* Toggle group (Y/N) */
+.toggle-group{display:flex;gap:8px}
+.toggle-opt{flex:1;text-align:center;padding:10px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:var(--trans);user-select:none}
+.toggle-opt:hover{border-color:#b8cbd6}
+.toggle-opt.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.toggle-opt.active.no{background:var(--coral);border-color:var(--coral)}
+
+/* Select-card group (multi-option, e.g. mask type) */
+.pill-group{display:flex;flex-wrap:wrap;gap:8px}
+.pill-opt{padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;transition:var(--trans);user-select:none}
+.pill-opt:hover{border-color:#b8cbd6}
+.pill-opt.active{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* Nav buttons */
+.nav-row{display:flex;justify-content:space-between;gap:12px;margin-top:22px}
+.btn{padding:12px 22px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:13.5px;font-weight:500;cursor:pointer;transition:var(--trans);border:none;display:inline-flex;align-items:center;gap:7px}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-ghost:hover{background:var(--bg);color:var(--label);border-color:#b8c8d4}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:#0a7d8c}
+.btn-submit{background:var(--navy);color:#fff}
+.btn-submit:hover{background:#0a1c2e}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Error / status */
+.inline-error{font-size:12.5px;color:var(--coral);margin-top:6px;display:none}
+.inline-error.show{display:block}
+.lookup-status{margin-top:14px;padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;display:none}
+.lookup-status.found{display:block;background:var(--teal-pale);color:#075e6b}
+.lookup-status.notfound{display:block;background:#fde8e8;color:#8f2626}
+
+/* Timepoint cards */
+.tp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.tp-grid{grid-template-columns:1fr}}
+.tp-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:var(--trans)}
+.tp-card:hover{border-color:#b8cbd6}
+.tp-card.active{border-color:var(--purple);background:var(--purple-pale)}
+.tp-card .tp-name{font-weight:600;font-size:13.5px;color:var(--navy)}
+.tp-card .tp-window{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* ND checkbox row */
+.nd-row{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:18px;cursor:pointer;border:1.5px solid var(--border)}
+.nd-row input{width:16px;height:16px}
+.nd-row span{font-size:12.5px;color:var(--label)}
+
+/* Review */
+.summary-section{margin-bottom:18px}
+.summary-section h4{font-family:var(--font-head);font-size:14px;font-weight:500;color:var(--navy);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.summary-item{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #f0f4f7;font-size:12.5px}
+.summary-item .s-label{color:var(--muted);font-family:var(--font-mono);font-size:11px}
+.summary-item .s-value{color:var(--text);font-weight:500;text-align:right}
+.summary-item .s-value.empty{color:#c0ced8;font-style:italic;font-weight:400}
+.id-banner{background:var(--navy);color:#fff;border-radius:var(--radius);padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.id-banner .id-val{font-family:var(--font-mono);font-size:16px;letter-spacing:.03em}
+.id-banner .id-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#9db3c7}
+
+/* Success */
+#success-screen{display:none;min-height:60vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:60px 24px}
+#success-screen.show{display:flex}
+.success-icon{width:72px;height:72px;background:var(--teal-pale);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:22px}
+#success-screen h2{font-family:var(--font-head);font-size:24px;color:var(--navy);margin-bottom:10px}
+#success-screen p{font-size:14.5px;color:var(--muted);max-width:420px;margin-bottom:8px;line-height:1.7}
+#success-screen .meta{font-family:var(--font-mono);font-size:16px;color:var(--teal);background:var(--teal-pale);padding:12px 24px;border-radius:var(--radius);margin:14px 0 26px}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="inner">
+    <div class="eyebrow">Institute of Sleep Science, Kolkata</div>
+    <h1>Guided, Individualized &amp; Tailored Mask Fitting in PAP Therapy Adherence</h1>
+    <div class="sub">CRF v2.0 &middot; Somnath Maity, PT (PI) &middot; Dr. Arup Kr. Halder (Co-PI)</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HOME -->
+  <div id="home-screen" class="screen show">
+    <div class="home-grid">
+      <div class="mod-card enroll" onclick="goTo('enroll')">
+        <div class="icon">＋</div>
+        <div><h2>New Patient Enrollment</h2><p>Demographics, baseline PSG severity, mask-fitting intervention, AI facial scan &amp; final mask selection. Generates a Patient ID.</p></div>
+      </div>
+      <div class="mod-card followup" onclick="goTo('followup')">
+        <div class="icon">↻</div>
+        <div><h2>Follow-Up Visit Entry</h2><p>Log adherence data at 1 week, 1 month, 3 months, 6 months, or 1 year for an existing patient.</p></div>
+      </div>
+      <div class="mod-card outcomes" onclick="goTo('outcomes')">
+        <div class="icon">✓</div>
+        <div><h2>Study Outcomes</h2><p>Record overall satisfaction and AI-vs-tailored mask concordance for an existing patient.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENROLL -->
+  <div id="enroll-screen" class="screen">
+    <div class="screen-head">
+      <button class="back-btn" onclick="goTo('home')">← Home</button>
+      <div class="screen-title">New Patient Enrollment</div>
+    </div>
+    <div class="step-label" id="enroll-step-label"></div>
+    <div class="progress-track" id="enroll-progress"></div>
+    <div class="panel" id="enroll-panel"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="enroll-back" onclick="enrollNav(-1)">Back</button>
+      <button class="btn btn-primary" id="enroll-next" onclick="enrollNav(1)">Next</button>
+    </div>
+  </div>
+
+  <!-- FOLLOW-UP -->
+  <div id="followup-screen" class="screen">
+    <div class="screen-head">
+      <button class="back-btn" onclick="goTo('home')">← Home</button>
+      <div class="screen-title">Follow-Up Visit Entry</div>
+    </div>
+    <div class="step-label" id="fu-step-label"></div>
+    <div class="progress-track" id="fu-progress"></div>
+    <div class="panel" id="fu-panel"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="fu-back" onclick="fuNav(-1)">Back</button>
+      <button class="btn btn-primary" id="fu-next" onclick="fuNav(1)">Next</button>
+    </div>
+  </div>
+
+  <!-- OUTCOMES -->
+  <div id="outcomes-screen" class="screen">
+    <div class="screen-head">
+      <button class="back-btn" onclick="goTo('home')">← Home</button>
+      <div class="screen-title">Study Outcomes</div>
+    </div>
+    <div class="step-label" id="oc-step-label"></div>
+    <div class="progress-track" id="oc-progress"></div>
+    <div class="panel" id="oc-panel"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="oc-back" onclick="ocNav(-1)">Back</button>
+      <button class="btn btn-primary" id="oc-next" onclick="ocNav(1)">Next</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="success-screen">
+    <div class="success-icon">✓</div>
+    <h2 id="success-title">Saved</h2>
+    <p id="success-msg"></p>
+    <div class="meta" id="success-meta" style="display:none"></div>
+    <button class="btn btn-primary" onclick="goTo('home')">Back to Home</button>
+  </div>
+
+</div>
+
+<script>
+/* ============================== SHARED HELPERS ============================== */
+function scriptConfigured(){
+  return typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL && SCRIPT_URL.indexOf('PASTE_YOUR') === -1;
+}
+function showScreen(id){
+  document.querySelectorAll('.screen, #success-screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goTo(name){
+  if(name==='home'){ showScreen('home-screen'); resetEnroll(); resetFollowup(); resetOutcomes(); }
+  else if(name==='enroll'){ showScreen('enroll-screen'); renderEnrollStep(); }
+  else if(name==='followup'){ showScreen('followup-screen'); renderFuStep(); }
+  else if(name==='outcomes'){ showScreen('outcomes-screen'); renderOcStep(); }
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function fieldHTML(f, val){
+  var req = f.required ? '<span class="req">*</span>' : '';
+  var html = '<div class="field" data-key="'+f.key+'">';
+  html += '<label>'+esc(f.label)+' '+req+'</label>';
+  if(f.type==='text'){
+    html += '<input type="text" id="fld-'+f.key+'" value="'+esc(val||'')+'" placeholder="'+esc(f.placeholder||'')+'" oninput="onFieldInput(this)">';
+  } else if(f.type==='number'){
+    html += '<div class="unit-input"><input type="number" id="fld-'+f.key+'" value="'+(val!=null?val:'')+'" '+(f.min!=null?'min="'+f.min+'"':'')+' '+(f.max!=null?'max="'+f.max+'"':'')+' step="'+(f.step||1)+'" oninput="onFieldInput(this)">'+(f.unit?'<span class="unit-tag">'+esc(f.unit)+'</span>':'')+'</div>';
+  } else if(f.type==='toggle'){
+    html += '<div class="toggle-group" id="fld-'+f.key+'">';
+    html += '<div class="toggle-opt yes'+(val==='Y'?' active':'')+'" onclick="setToggle(\''+f.key+'\',\'Y\')">Yes</div>';
+    html += '<div class="toggle-opt no'+(val==='N'?' active':'')+'" onclick="setToggle(\''+f.key+'\',\'N\')">No</div>';
+    html += '</div>';
+  } else if(f.type==='select'){
+    html += '<select id="fld-'+f.key+'" onchange="onFieldInput(this)"><option value="">Select...</option>';
+    f.options.forEach(o=>{ html += '<option value="'+esc(o)+'" '+(val===o?'selected':'')+'>'+esc(o)+'</option>'; });
+    html += '</select>';
+  } else if(f.type==='pills'){
+    html += '<div class="pill-group" id="fld-'+f.key+'">';
+    f.options.forEach(o=>{ html += '<div class="pill-opt'+(val===o?' active':'')+'" onclick="setPill(\''+f.key+'\',\''+o.replace(/'/g,"\\'")+'\')">'+esc(o)+'</div>'; });
+    html += '</div>';
+  }
+  if(f.hint) html += '<div class="hint">'+esc(f.hint)+'</div>';
+  html += '</div>';
+  return html;
+}
+
+/* ============================== ENROLLMENT ============================== */
+var enrollData = {};
+var enrollStep = 0;
+
+var ENROLL_SECTIONS = [
+  { title:'Demographics', sub:'Patient identity and basic measures.', fields:[
+    {key:'name', label:'Full Name', type:'text', required:true},
+    {key:'age', label:'Age', type:'number', unit:'years', min:0, max:120, required:true},
+    {key:'sex', label:'Sex', type:'toggle_ms', options:['M','F'], required:true},
+    {key:'bmi', label:'BMI', type:'number', step:0.1, min:10, max:70, required:true}
+  ]},
+  { title:'Baseline PSG Severity', sub:'From the diagnostic polysomnogram.', fields:[
+    {key:'ahi', label:'PSG - AHI', type:'number', unit:'events/hr', step:0.1, required:true},
+    {key:'odi', label:'PSG - ODI', type:'number', unit:'events/hr', step:0.1, required:true},
+    {key:'lsat', label:'LSAT', type:'number', unit:'%', step:1, required:true},
+    {key:'t90', label:'T90 - Time SpO2 ≤88%', type:'number', unit:'hours', step:0.01, required:true},
+    {key:'stopbang', label:'STOP-BANG Score', type:'number', min:0, max:8, step:1, required:true},
+    {key:'epss', label:'EPSS (Epworth Sleepiness Scale)', type:'number', min:0, max:24, step:1, required:true}
+  ]},
+  { title:'Mask-Fitting Intervention', sub:'How the fitting session was conducted.', fields:[
+    {key:'aiGuided', label:'AI-guided mask selection (MyMask™)', type:'toggle', required:true},
+    {key:'masksTried', label:'Number of masks tried', type:'number', min:0, step:1, required:true},
+    {key:'fittingPosition', label:'Mask fitting performed', type:'select', options:['Sitting','Lying','Both'], required:true},
+    {key:'fittingTime', label:'Total mask-fitting time', type:'number', unit:'hours', step:0.1, required:true},
+    {key:'pressureTrial', label:'Pressure trial during fitting', type:'toggle', required:true}
+  ]},
+  { title:'Patient-Specific Factors', sub:'Habits and traits that influence mask fit.', fields:[
+    {key:'glassesBed', label:'Wears glasses in bed before sleep', type:'toggle', required:true},
+    {key:'sensitiveNostrils', label:'Has sensitive nostrils', type:'toggle', required:true},
+    {key:'tossTurn', label:'Tosses and turns at night', type:'toggle', required:true},
+    {key:'claustrophobic', label:'Gets claustrophobic', type:'toggle', required:true},
+    {key:'sleepPosition', label:'Preferred sleeping position', type:'select', options:['Side/Front','Supine/Back'], required:true},
+    {key:'gripTrouble', label:'Trouble grasping/holding things with hand', type:'toggle', required:true},
+    {key:'nasalCongestion', label:'Frequently experiences nasal congestion', type:'toggle', required:true}
+  ]},
+  { title:'AI Facial Scan & Mask Size Guidance', sub:'MyMask™ scan output and manual cross-check.', fields:[
+    {key:'aiChoice1', label:'AI 1st choice mask type', type:'select', options:['Nasal','Nasal Pillow','Oro-Nasal'], required:true},
+    {key:'aiChoice2', label:'AI 2nd choice mask type', type:'select', options:['Nasal','Nasal Pillow','Oro-Nasal'], required:true},
+    {key:'aiChoice3', label:'AI 3rd choice mask type', type:'select', options:['Nasal','Nasal Pillow','Oro-Nasal'], required:true},
+    {key:'frontalScan', label:'Frontal facial scan performed', type:'toggle', hint:'Glasses/hat/mask removed before scanning', required:true},
+    {key:'nasalScan', label:'Nasal scan performed', type:'toggle', required:true},
+    {key:'aiSize', label:'AI-suggested mask size', type:'select', options:['XS','S','M','L','XL'], required:true},
+    {key:'manualCheck', label:'Manual sizer cross-check performed', type:'toggle', required:true},
+    {key:'manualMatch', label:'Manual sizer match with AI', type:'select', options:['Same','Different'], required:true}
+  ]},
+  { title:'Mask Selection & Device', sub:'What the patient ended up wearing.', fields:[
+    {key:'comfortableType', label:'Patient-reported most comfortable mask type', type:'select', options:['Nasal','Oro-nasal','Pillow'], required:true},
+    {key:'comfortableMatch', label:'Comfortable mask match with AI', type:'select', options:['Same','Different'], required:true},
+    {key:'finalMask', label:'Final mask selection', type:'text', placeholder:'Brand/model, e.g. ResMed N20', required:true},
+    {key:'device', label:'Device', type:'text', placeholder:'e.g. ResMed AirSense, Philips DreamStation, Sefam Nea', required:true},
+    {key:'setPressure', label:'Set pressure', type:'text', placeholder:'e.g. 9.8 cmH2O or 5-20 cmH2O', required:true}
+  ]},
+  { title:'Patient Experience', sub:'Rated immediately after fitting.', fields:[
+    {key:'experienceRating', label:'Overall experience rating', type:'number', unit:'0-10', min:0, max:10, step:1, required:true}
+  ]}
+];
+
+function resetEnroll(){ enrollData = {}; enrollStep = 0; }
+
+function onFieldInput(el){
+  var key = el.id.replace('fld-','');
+  activeForm()[key] = el.value;
+  clearError(key);
+}
+function setToggle(key, val){
+  var group = document.getElementById('fld-'+key);
+  if(group){ group.querySelectorAll('.toggle-opt').forEach(o=>o.classList.remove('active')); group.querySelector(val==='Y'?'.yes':'.no').classList.add('active'); }
+  activeForm()[key] = val;
+  clearError(key);
+}
+function setPill(key, val){
+  var group = document.getElementById('fld-'+key);
+  if(group){ group.querySelectorAll('.pill-opt').forEach(o=>o.classList.remove('active')); Array.from(group.children).forEach(c=>{ if(c.textContent===val) c.classList.add('active'); }); }
+  activeForm()[key] = val;
+  clearError(key);
+}
+function activeForm(){
+  if(document.getElementById('enroll-screen').classList.contains('show')) return enrollData;
+  if(document.getElementById('followup-screen').classList.contains('show')) return fuData;
+  return ocData;
+}
+function clearError(key){
+  var f = document.querySelector('[data-key="'+key+'"] .inline-error');
+  if(f) f.classList.remove('show');
+}
+
+function sexToggleHTML(val){
+  var html = '<div class="field" data-key="sex"><label>Sex <span class="req">*</span></label><div class="toggle-group" id="fld-sex">';
+  ['M','F'].forEach(o=>{ html += '<div class="toggle-opt'+(val===o?' active':'')+'" onclick="setSex(\''+o+'\')">'+(o==='M'?'Male':'Female')+'</div>'; });
+  html += '</div></div>';
+  return html;
+}
+function setSex(val){
+  enrollData.sex = val;
+  var group = document.getElementById('fld-sex');
+  group.querySelectorAll('.toggle-opt').forEach(o=>o.classList.remove('active'));
+  Array.from(group.children).forEach(c=>{ if(c.textContent===(val==='M'?'Male':'Female')) c.classList.add('active'); });
+  clearError('sex');
+}
+
+function renderEnrollStep(){
+  var total = ENROLL_SECTIONS.length + 1; // + review
+  document.getElementById('enroll-step-label').textContent = 'Step '+(enrollStep+1)+' of '+total;
+  var track = document.getElementById('enroll-progress');
+  track.innerHTML = '';
+  for(var i=0;i<total;i++){
+    var seg = document.createElement('div');
+    seg.className = 'progress-seg'+(i<enrollStep?' done':i===enrollStep?' current':'');
+    track.appendChild(seg);
+  }
+  var panel = document.getElementById('enroll-panel');
+  var backBtn = document.getElementById('enroll-back');
+  var nextBtn = document.getElementById('enroll-next');
+  backBtn.style.visibility = enrollStep===0 ? 'hidden' : 'visible';
+
+  if(enrollStep < ENROLL_SECTIONS.length){
+    var sec = ENROLL_SECTIONS[enrollStep];
+    var html = '<h3>'+esc(sec.title)+'</h3><div class="panel-sub">'+esc(sec.sub)+'</div>';
+    sec.fields.forEach(f=>{
+      if(f.key==='sex'){ html += sexToggleHTML(enrollData.sex); }
+      else html += fieldHTML(f, enrollData[f.key]);
+    });
+    panel.innerHTML = html;
+    nextBtn.textContent = 'Next';
+    nextBtn.className = 'btn btn-primary';
+  } else {
+    panel.innerHTML = buildEnrollReview();
+    nextBtn.textContent = 'Submit Enrollment';
+    nextBtn.className = 'btn btn-submit';
+  }
+}
+
+function validateEnrollStep(){
+  if(enrollStep >= ENROLL_SECTIONS.length) return true;
+  var sec = ENROLL_SECTIONS[enrollStep];
+  var ok = true;
+  sec.fields.forEach(f=>{
+    if(f.required && (enrollData[f.key]===undefined || enrollData[f.key]==='')){
+      ok = false;
+      var field = document.querySelector('#enroll-panel [data-key="'+f.key+'"]');
+      if(field && !field.querySelector('.inline-error')){
+        var err = document.createElement('div'); err.className='inline-error show'; err.textContent='Required';
+        field.appendChild(err);
+      } else if(field){ field.querySelector('.inline-error').classList.add('show'); }
+    }
+  });
+  return ok;
+}
+
+function enrollNav(dir){
+  if(dir===1){
+    if(!validateEnrollStep()) return;
+    if(enrollStep === ENROLL_SECTIONS.length){ submitEnrollment(); return; }
+    enrollStep++;
+  } else {
+    enrollStep = Math.max(0, enrollStep-1);
+  }
+  renderEnrollStep();
+}
+
+function buildEnrollReview(){
+  var html = '<h3>Review &amp; Submit</h3><div class="panel-sub">Check the details below, then submit to create the patient record.</div>';
+  ENROLL_SECTIONS.forEach(sec=>{
+    html += '<div class="summary-section"><h4>'+esc(sec.title)+'</h4>';
+    sec.fields.forEach(f=>{
+      var v = enrollData[f.key];
+      html += '<div class="summary-item"><span class="s-label">'+esc(f.label)+'</span><span class="s-value'+(v?'':' empty')+'">'+(v?esc(v):'—')+'</span></div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+function genPatientId(){
+  return 'ISS-'+Math.floor(1000+Math.random()*9000);
+}
+
+function submitEnrollment(){
+  var nextBtn = document.getElementById('enroll-next');
+  nextBtn.disabled = true; nextBtn.textContent = 'Checking ID...';
+  checkIdAndSubmit(genPatientId(), 0);
+}
+
+function checkIdAndSubmit(id, attempt){
+  if(!scriptConfigured()){ finishSubmit(id, 'enroll'); return; }
+  fetch(SCRIPT_URL+'?action=exists&patientId='+encodeURIComponent(id))
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.exists && attempt < 5){ checkIdAndSubmit(genPatientId(), attempt+1); }
+      else { finishSubmit(id, 'enroll'); }
+    })
+    .catch(()=>{ finishSubmit(id, 'enroll'); });
+}
+
+function finishSubmit(patientId, action){
+  var payload = Object.assign({action:'enroll', patientId:patientId}, enrollData);
+  postToSheet(payload);
+  showEnrollSuccess(patientId);
+}
+
+function postToSheet(payload){
+  if(!scriptConfigured()) return;
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
+}
+
+function showEnrollSuccess(patientId){
+  document.getElementById('success-title').textContent = 'Patient Enrolled';
+  document.getElementById('success-msg').textContent = 'Write down this Patient ID — it\'s needed for every follow-up visit and the outcomes form.';
+  var meta = document.getElementById('success-meta');
+  meta.style.display='block'; meta.textContent = patientId;
+  showScreen('success-screen');
+}
+
+/* ============================== FOLLOW-UP ============================== */
+var fuData = {};
+var fuStep = 0;
+var fuLookedUp = false;
+var fuNd = false;
+
+var TIMEPOINTS = [
+  {key:'1wk', name:'1 Week', window:'~7 days post-fitting'},
+  {key:'1mo', name:'1 Month', window:'~30 days post-fitting'},
+  {key:'3mo', name:'3 Months', window:'Primary outcome window'},
+  {key:'6mo', name:'6 Months', window:'~180 days post-fitting'},
+  {key:'1yr', name:'1 Year', window:'~365 days post-fitting'}
+];
+
+var FU_FIELDS = [
+  {key:'maskChanged', label:'Mask changed since last visit', type:'toggle', required:true},
+  {key:'adherencePct', label:'CPAP adherence — uses ≥4h/night', type:'number', unit:'%', min:0, max:100, step:1, required:true},
+  {key:'avgUsage', label:'Average usage', type:'number', unit:'hrs/night', step:0.01, required:true},
+  {key:'maskLeak', label:'Mask leak, 95th percentile', type:'number', unit:'L/min', step:0.1, required:true},
+  {key:'residualAhi', label:'Average residual AHI', type:'number', unit:'/hr', step:0.1, required:true}
+];
+
+function resetFollowup(){ fuData = {}; fuStep = 0; fuLookedUp = false; fuNd = false; }
+
+function renderFuStep(){
+  var total = 4; // id lookup, timepoint, fields, review
+  document.getElementById('fu-step-label').textContent = 'Step '+(fuStep+1)+' of '+total;
+  var track = document.getElementById('fu-progress');
+  track.innerHTML = '';
+  for(var i=0;i<total;i++){
+    var seg = document.createElement('div');
+    seg.className = 'progress-seg'+(i<fuStep?' done':i===fuStep?' current':'');
+    track.appendChild(seg);
+  }
+  var panel = document.getElementById('fu-panel');
+  var backBtn = document.getElementById('fu-back');
+  var nextBtn = document.getElementById('fu-next');
+  backBtn.style.visibility = fuStep===0 ? 'hidden' : 'visible';
+  nextBtn.className = 'btn btn-primary'; nextBtn.textContent = 'Next';
+
+  if(fuStep===0){
+    panel.innerHTML =
+      '<h3>Find Patient</h3><div class="panel-sub">Enter the Patient ID from enrollment.</div>'+
+      '<div class="field" data-key="patientId"><label>Patient ID <span class="req">*</span></label>'+
+      '<input type="text" id="fld-patientId-fu" placeholder="ISS-0000" value="'+esc(fuData.patientId||'')+'" oninput="fuData.patientId=this.value.toUpperCase();this.value=fuData.patientId;fuLookedUp=false;document.getElementById(\'fu-lookup-status\').className=\'lookup-status\';">'+
+      '</div>'+
+      '<button class="btn btn-ghost" onclick="lookupPatient(\'fu\')" type="button">Look Up Patient</button>'+
+      '<div class="lookup-status" id="fu-lookup-status"></div>';
+  } else if(fuStep===1){
+    var html = '<h3>Visit Timepoint</h3><div class="panel-sub">Which follow-up visit is this?</div><div class="tp-grid">';
+    TIMEPOINTS.forEach(tp=>{
+      html += '<div class="tp-card'+(fuData.timepoint===tp.key?' active':'')+'" onclick="setFuTimepoint(\''+tp.key+'\')"><div class="tp-name">'+tp.name+'</div><div class="tp-window">'+tp.window+'</div></div>';
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+  } else if(fuStep===2){
+    var tpName = TIMEPOINTS.find(t=>t.key===fuData.timepoint).name;
+    var html2 = '<h3>'+tpName+' Follow-Up</h3><div class="panel-sub">Objective adherence data for this visit.</div>';
+    html2 += '<div class="nd-row" onclick="toggleNd(event)"><input type="checkbox" id="nd-check" '+(fuNd?'checked':'')+'><span>Visit not done (ND) — skip the fields below</span></div>';
+    html2 += '<div id="fu-fields-wrap" style="'+(fuNd?'display:none':'')+'">';
+    FU_FIELDS.forEach(f=>{ html2 += fieldHTML(f, fuData[f.key]); });
+    html2 += '</div>';
+    panel.innerHTML = html2;
+  } else {
+    panel.innerHTML = buildFuReview();
+    nextBtn.textContent = 'Submit Follow-Up';
+    nextBtn.className = 'btn btn-submit';
+  }
+}
+
+function toggleNd(e){
+  fuNd = document.getElementById('nd-check').checked;
+  document.getElementById('fu-fields-wrap').style.display = fuNd ? 'none' : '';
+}
+
+function setFuTimepoint(key){ fuData.timepoint = key; renderFuStep(); }
+
+function lookupPatient(mode){
+  var data = mode==='fu' ? fuData : ocData;
+  var statusEl = document.getElementById(mode+'-lookup-status');
+  var id = (data.patientId||'').trim();
+  if(!id){ statusEl.className='lookup-status notfound'; statusEl.textContent='Enter a Patient ID first.'; return; }
+  if(!scriptConfigured()){
+    statusEl.className='lookup-status found'; statusEl.textContent='Sheet not connected yet — proceeding without verification.';
+    if(mode==='fu') fuLookedUp = true; else ocLookedUp = true;
+    return;
+  }
+  statusEl.className='lookup-status found'; statusEl.textContent='Looking up...';
+  fetch(SCRIPT_URL+'?action=lookup&patientId='+encodeURIComponent(id))
+    .then(r=>r.json())
+    .then(res=>{
+      if(res.status==='found'){
+        statusEl.className='lookup-status found'; statusEl.textContent='Patient found: '+res.name;
+        if(mode==='fu') fuLookedUp = true; else ocLookedUp = true;
+      } else {
+        statusEl.className='lookup-status notfound'; statusEl.textContent='No patient found with that ID. Check and try again.';
+        if(mode==='fu') fuLookedUp = false; else ocLookedUp = false;
+      }
+    })
+    .catch(()=>{ statusEl.className='lookup-status notfound'; statusEl.textContent='Could not reach the sheet. Check your connection.'; });
+}
+
+function validateFuStep(){
+  if(fuStep===0){
+    if(!fuData.patientId){ alert('Enter a Patient ID.'); return false; }
+    if(!fuLookedUp){ alert('Look up the patient before continuing.'); return false; }
+    return true;
+  }
+  if(fuStep===1){
+    if(!fuData.timepoint){ alert('Select a timepoint.'); return false; }
+    return true;
+  }
+  if(fuStep===2 && !fuNd){
+    var ok = true;
+    FU_FIELDS.forEach(f=>{
+      if(f.required && (fuData[f.key]===undefined || fuData[f.key]==='')){
+        ok = false;
+        var field = document.querySelector('#fu-panel [data-key="'+f.key+'"]');
+        if(field && !field.querySelector('.inline-error')){
+          var err=document.createElement('div'); err.className='inline-error show'; err.textContent='Required'; field.appendChild(err);
+        } else if(field){ field.querySelector('.inline-error').classList.add('show'); }
+      }
+    });
+    return ok;
+  }
+  return true;
+}
+
+function fuNav(dir){
+  if(dir===1){
+    if(!validateFuStep()) return;
+    if(fuStep===3){ submitFollowup(); return; }
+    fuStep++;
+  } else {
+    fuStep = Math.max(0, fuStep-1);
+  }
+  renderFuStep();
+}
+
+function buildFuReview(){
+  var tp = TIMEPOINTS.find(t=>t.key===fuData.timepoint);
+  var html = '<h3>Review &amp; Submit</h3><div class="panel-sub">'+tp.name+' follow-up for '+esc(fuData.patientId)+'.</div>';
+  html += '<div class="id-banner"><div><div class="id-lbl">Patient ID</div><div class="id-val">'+esc(fuData.patientId)+'</div></div><div><div class="id-lbl">Visit</div><div class="id-val">'+tp.name+'</div></div></div>';
+  if(fuNd){
+    html += '<div class="summary-item"><span class="s-label">Status</span><span class="s-value">Not done (ND)</span></div>';
+  } else {
+    html += '<div class="summary-section">';
+    FU_FIELDS.forEach(f=>{
+      var v = fuData[f.key];
+      html += '<div class="summary-item"><span class="s-label">'+esc(f.label)+'</span><span class="s-value'+(v?'':' empty')+'">'+(v?esc(v):'—')+'</span></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function submitFollowup(){
+  var payload = { action:'followup', patientId: fuData.patientId, timepoint: fuData.timepoint };
+  if(fuNd){
+    payload.maskChanged='ND'; payload.adherencePct='ND'; payload.avgUsage='ND'; payload.maskLeak='ND'; payload.residualAhi='ND';
+  } else {
+    FU_FIELDS.forEach(f=>{ payload[f.key] = fuData[f.key]; });
+  }
+  postToSheet(payload);
+  document.getElementById('success-title').textContent = 'Follow-Up Saved';
+  document.getElementById('success-msg').textContent = TIMEPOINTS.find(t=>t.key===fuData.timepoint).name+' visit recorded for patient '+fuData.patientId+'.';
+  document.getElementById('success-meta').style.display='none';
+  showScreen('success-screen');
+}
+
+/* ============================== OUTCOMES ============================== */
+var ocData = {};
+var ocStep = 0;
+var ocLookedUp = false;
+
+var OC_FIELDS = [
+  {key:'satisfaction', label:'Overall patient satisfaction', type:'number', unit:'0-10', min:0, max:10, step:1, required:true},
+  {key:'aiSuggestedMask', label:'AI-suggested mask (MyMask™)', type:'select', options:['Nasal','Nasal Pillow','Oro-Nasal'], required:true},
+  {key:'concordance', label:'Concordance: final mask vs AI suggestion', type:'select', options:['Same','Different'], required:true}
+];
+
+function resetOutcomes(){ ocData = {}; ocStep = 0; ocLookedUp = false; }
+
+function renderOcStep(){
+  var total = 3; // lookup, fields, review
+  document.getElementById('oc-step-label').textContent = 'Step '+(ocStep+1)+' of '+total;
+  var track = document.getElementById('oc-progress');
+  track.innerHTML = '';
+  for(var i=0;i<total;i++){
+    var seg = document.createElement('div');
+    seg.className = 'progress-seg'+(i<ocStep?' done':i===ocStep?' current':'');
+    track.appendChild(seg);
+  }
+  var panel = document.getElementById('oc-panel');
+  var backBtn = document.getElementById('oc-back');
+  var nextBtn = document.getElementById('oc-next');
+  backBtn.style.visibility = ocStep===0 ? 'hidden' : 'visible';
+  nextBtn.className = 'btn btn-primary'; nextBtn.textContent = 'Next';
+
+  if(ocStep===0){
+    panel.innerHTML =
+      '<h3>Find Patient</h3><div class="panel-sub">Enter the Patient ID from enrollment.</div>'+
+      '<div class="field" data-key="patientId"><label>Patient ID <span class="req">*</span></label>'+
+      '<input type="text" id="fld-patientId-oc" placeholder="ISS-0000" value="'+esc(ocData.patientId||'')+'" oninput="ocData.patientId=this.value.toUpperCase();this.value=ocData.patientId;ocLookedUp=false;document.getElementById(\'oc-lookup-status\').className=\'lookup-status\';">'+
+      '</div>'+
+      '<button class="btn btn-ghost" onclick="lookupPatient(\'oc\')" type="button">Look Up Patient</button>'+
+      '<div class="lookup-status" id="oc-lookup-status"></div>';
+  } else if(ocStep===1){
+    var html = '<h3>Study Outcomes</h3><div class="panel-sub">Final assessment for '+esc(ocData.patientId)+'.</div>';
+    OC_FIELDS.forEach(f=>{ html += fieldHTML(f, ocData[f.key]); });
+    panel.innerHTML = html;
+  } else {
+    panel.innerHTML = buildOcReview();
+    nextBtn.textContent = 'Submit Outcomes';
+    nextBtn.className = 'btn btn-submit';
+  }
+}
+
+function validateOcStep(){
+  if(ocStep===0){
+    if(!ocData.patientId){ alert('Enter a Patient ID.'); return false; }
+    if(!ocLookedUp){ alert('Look up the patient before continuing.'); return false; }
+    return true;
+  }
+  if(ocStep===1){
+    var ok = true;
+    OC_FIELDS.forEach(f=>{
+      if(f.required && (ocData[f.key]===undefined || ocData[f.key]==='')){
+        ok = false;
+        var field = document.querySelector('#oc-panel [data-key="'+f.key+'"]');
+        if(field && !field.querySelector('.inline-error')){
+          var err=document.createElement('div'); err.className='inline-error show'; err.textContent='Required'; field.appendChild(err);
+        } else if(field){ field.querySelector('.inline-error').classList.add('show'); }
+      }
+    });
+    return ok;
+  }
+  return true;
+}
+
+function ocNav(dir){
+  if(dir===1){
+    if(!validateOcStep()) return;
+    if(ocStep===2){ submitOutcomes(); return; }
+    ocStep++;
+  } else {
+    ocStep = Math.max(0, ocStep-1);
+  }
+  renderOcStep();
+}
+
+function buildOcReview(){
+  var html = '<h3>Review &amp; Submit</h3><div class="panel-sub">Final outcomes for '+esc(ocData.patientId)+'.</div>';
+  html += '<div class="id-banner"><div><div class="id-lbl">Patient ID</div><div class="id-val">'+esc(ocData.patientId)+'</div></div></div>';
+  html += '<div class="summary-section">';
+  OC_FIELDS.forEach(f=>{
+    var v = ocData[f.key];
+    html += '<div class="summary-item"><span class="s-label">'+esc(f.label)+'</span><span class="s-value'+(v?'':' empty')+'">'+(v?esc(v):'—')+'</span></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function submitOutcomes(){
+  var payload = { action:'outcomes', patientId: ocData.patientId, satisfaction: ocData.satisfaction, aiSuggestedMask: ocData.aiSuggestedMask, concordance: ocData.concordance };
+  postToSheet(payload);
+  document.getElementById('success-title').textContent = 'Outcomes Saved';
+  document.getElementById('success-msg').textContent = 'Study outcomes recorded for patient '+ocData.patientId+'.';
+  document.getElementById('success-meta').style.display='none';
+  showScreen('success-screen');
+}
+</script>
+</body>
+</html>
