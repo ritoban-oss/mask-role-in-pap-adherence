@@ -451,31 +451,67 @@ function genPatientId(){
 }
 
 function submitEnrollment(){
+  if(!requireConfigured()) return;
   var nextBtn = document.getElementById('enroll-next');
   nextBtn.disabled = true; nextBtn.textContent = 'Checking ID...';
   checkIdAndSubmit(genPatientId(), 0);
 }
 
+function requireConfigured(){
+  if(!scriptConfigured()){
+    alert('This app isn\'t connected to a Google Sheet yet. config.js still has the placeholder SCRIPT_URL — paste in the deployed Apps Script /exec URL (see README.md) before enrolling patients. Nothing was saved.');
+    return false;
+  }
+  return true;
+}
+
 function checkIdAndSubmit(id, attempt){
-  if(!scriptConfigured()){ finishSubmit(id, 'enroll'); return; }
   fetch(SCRIPT_URL+'?action=exists&patientId='+encodeURIComponent(id))
-    .then(r=>r.json())
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(data=>{
       if(data.exists && attempt < 5){ checkIdAndSubmit(genPatientId(), attempt+1); }
       else { finishSubmit(id, 'enroll'); }
     })
-    .catch(()=>{ finishSubmit(id, 'enroll'); });
+    .catch(err=>{
+      var nextBtn = document.getElementById('enroll-next');
+      nextBtn.disabled = false; nextBtn.textContent = 'Submit Enrollment';
+      alert('Could not reach the Google Sheet (' + err.message + '). Check that config.js has the correct Apps Script URL and that the deployment\'s access is set to "Anyone". Nothing was saved — please try again.');
+    });
 }
 
 function finishSubmit(patientId, action){
   var payload = Object.assign({action:'enroll', patientId:patientId}, enrollData);
+  var nextBtn = document.getElementById('enroll-next');
+  nextBtn.disabled = true; nextBtn.textContent = 'Saving...';
   postToSheet(payload);
-  showEnrollSuccess(patientId);
+  pollVerify(patientId, function(fields){ return fields['Name'] === enrollData.name; }, 4, 900,
+    function(){ showEnrollSuccess(patientId); },
+    function(){
+      nextBtn.disabled = false; nextBtn.textContent = 'Submit Enrollment';
+      alert('The patient record could not be confirmed in the Google Sheet after saving. The write likely failed inside the Apps Script (the exists-check reaching it doesn\'t guarantee the POST handler succeeds). Open the Apps Script editor \u2192 Executions (left sidebar) and look for a failed doPost run to see the actual error. Nothing was confirmed saved \u2014 please check Executions before retrying.');
+    });
+}
+
+function pollVerify(patientId, checkFn, attemptsLeft, delayMs, onVerified, onFailed){
+  setTimeout(function(){
+    fetch(SCRIPT_URL+'?action=lookup&patientId='+encodeURIComponent(patientId))
+      .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(res=>{
+        if(res.status==='found' && checkFn(res.fields||{})){ onVerified(res); }
+        else if(attemptsLeft>1){ pollVerify(patientId, checkFn, attemptsLeft-1, Math.min(delayMs*1.6,4000), onVerified, onFailed); }
+        else { onFailed(res); }
+      })
+      .catch(err=>{
+        if(attemptsLeft>1){ pollVerify(patientId, checkFn, attemptsLeft-1, Math.min(delayMs*1.6,4000), onVerified, onFailed); }
+        else { onFailed({error:err.message}); }
+      });
+  }, delayMs);
 }
 
 function postToSheet(payload){
   if(!scriptConfigured()) return;
-  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) })
+    .catch(err=>{ alert('Network error while saving to the sheet: ' + err.message + '. Please try submitting again.'); });
 }
 
 function showEnrollSuccess(patientId){
@@ -499,6 +535,11 @@ var TIMEPOINTS = [
   {key:'6mo', name:'6 Months', window:'~180 days post-fitting'},
   {key:'1yr', name:'1 Year', window:'~365 days post-fitting'}
 ];
+
+var TIMEPOINT_CHECK_HEADER = {
+  '1wk':'FU 1wk - Mask changed', '1mo':'FU 1mo - Mask changed', '3mo':'FU 3mo - Mask changed',
+  '6mo':'FU 6mo - Mask changed', '1yr':'FU 1yr - Mask changed'
+};
 
 var FU_FIELDS = [
   {key:'maskChanged', label:'Mask changed since last visit', type:'toggle', required:true},
@@ -569,8 +610,8 @@ function lookupPatient(mode){
   var id = (data.patientId||'').trim();
   if(!id){ statusEl.className='lookup-status notfound'; statusEl.textContent='Enter a Patient ID first.'; return; }
   if(!scriptConfigured()){
-    statusEl.className='lookup-status found'; statusEl.textContent='Sheet not connected yet — proceeding without verification.';
-    if(mode==='fu') fuLookedUp = true; else ocLookedUp = true;
+    statusEl.className='lookup-status notfound'; statusEl.textContent='This app isn\'t connected to a Google Sheet yet — config.js still has the placeholder URL. Nothing can be saved until that\'s fixed.';
+    if(mode==='fu') fuLookedUp = false; else ocLookedUp = false;
     return;
   }
   statusEl.className='lookup-status found'; statusEl.textContent='Looking up...';
@@ -643,17 +684,28 @@ function buildFuReview(){
 }
 
 function submitFollowup(){
+  if(!requireConfigured()) return;
   var payload = { action:'followup', patientId: fuData.patientId, timepoint: fuData.timepoint };
   if(fuNd){
     payload.maskChanged='ND'; payload.adherencePct='ND'; payload.avgUsage='ND'; payload.maskLeak='ND'; payload.residualAhi='ND';
   } else {
     FU_FIELDS.forEach(f=>{ payload[f.key] = fuData[f.key]; });
   }
+  var nextBtn = document.getElementById('fu-next');
+  nextBtn.disabled = true; nextBtn.textContent = 'Saving...';
   postToSheet(payload);
-  document.getElementById('success-title').textContent = 'Follow-Up Saved';
-  document.getElementById('success-msg').textContent = TIMEPOINTS.find(t=>t.key===fuData.timepoint).name+' visit recorded for patient '+fuData.patientId+'.';
-  document.getElementById('success-meta').style.display='none';
-  showScreen('success-screen');
+  var checkHeader = TIMEPOINT_CHECK_HEADER[fuData.timepoint];
+  pollVerify(fuData.patientId, function(fields){ return String(fields[checkHeader])===String(payload.maskChanged); }, 4, 900,
+    function(){
+      document.getElementById('success-title').textContent = 'Follow-Up Saved';
+      document.getElementById('success-msg').textContent = TIMEPOINTS.find(t=>t.key===fuData.timepoint).name+' visit recorded for patient '+fuData.patientId+'.';
+      document.getElementById('success-meta').style.display='none';
+      showScreen('success-screen');
+    },
+    function(){
+      nextBtn.disabled = false; nextBtn.textContent = 'Submit Follow-Up';
+      alert('This follow-up could not be confirmed in the Google Sheet. Open the Apps Script editor \u2192 Executions to see the actual error from the last doPost run. Nothing was confirmed saved \u2014 please check Executions before retrying.');
+    });
 }
 
 /* ============================== OUTCOMES ============================== */
@@ -750,12 +802,22 @@ function buildOcReview(){
 }
 
 function submitOutcomes(){
+  if(!requireConfigured()) return;
   var payload = { action:'outcomes', patientId: ocData.patientId, satisfaction: ocData.satisfaction, aiSuggestedMask: ocData.aiSuggestedMask, concordance: ocData.concordance };
+  var nextBtn = document.getElementById('oc-next');
+  nextBtn.disabled = true; nextBtn.textContent = 'Saving...';
   postToSheet(payload);
-  document.getElementById('success-title').textContent = 'Outcomes Saved';
-  document.getElementById('success-msg').textContent = 'Study outcomes recorded for patient '+ocData.patientId+'.';
-  document.getElementById('success-meta').style.display='none';
-  showScreen('success-screen');
+  pollVerify(ocData.patientId, function(fields){ return String(fields['Overall patient satisfaction (0-10)'])===String(payload.satisfaction); }, 4, 900,
+    function(){
+      document.getElementById('success-title').textContent = 'Outcomes Saved';
+      document.getElementById('success-msg').textContent = 'Study outcomes recorded for patient '+ocData.patientId+'.';
+      document.getElementById('success-meta').style.display='none';
+      showScreen('success-screen');
+    },
+    function(){
+      nextBtn.disabled = false; nextBtn.textContent = 'Submit Outcomes';
+      alert('These outcomes could not be confirmed in the Google Sheet. Open the Apps Script editor \u2192 Executions to see the actual error from the last doPost run. Nothing was confirmed saved \u2014 please check Executions before retrying.');
+    });
 }
 </script>
 </body>

@@ -169,12 +169,15 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     var rowVals = sheet.getRange(r2, 1, 1, HEADERS.length).getValues()[0];
+    var fields = {};
+    for (var i = 0; i < HEADERS.length; i++) fields[HEADERS[i]] = rowVals[i];
     return ContentService
       .createTextOutput(JSON.stringify({
         status: 'found',
         name: rowVals[1],
         age: rowVals[2],
-        sex: rowVals[3]
+        sex: rowVals[3],
+        fields: fields
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
